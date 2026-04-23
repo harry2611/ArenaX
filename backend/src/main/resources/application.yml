@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: arenax-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/arenax}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+arena:
+  jwt:
+    issuer: arenax-backend
+    secret: ${ARENA_JWT_SECRET:replace-with-a-long-secret-for-arenax-jwt-12345}
+    expiration-minutes: 720

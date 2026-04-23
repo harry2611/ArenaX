@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: arenax-postgres
+    environment:
+      POSTGRES_DB: ${ARENA_DB_NAME:-arenax}
+      POSTGRES_USER: ${ARENA_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${ARENA_DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ARENA_DB_USER:-postgres} -d ${ARENA_DB_NAME:-arenax}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: arenax-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${ARENA_DB_NAME:-arenax}
+      SPRING_DATASOURCE_USERNAME: ${ARENA_DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${ARENA_DB_PASSWORD:-postgres}
+      ARENA_JWT_SECRET: ${ARENA_JWT_SECRET:-replace-with-a-long-secret-for-arenax-jwt-12345}
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
