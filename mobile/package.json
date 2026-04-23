@@ -8,9 +8,11 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "web:desktop": "expo start --web --port 19006",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~5.0.5",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-navigation/bottom-tabs": "^7.0.0",
@@ -21,16 +23,19 @@
     "@tanstack/react-query": "^5.59.0",
     "@tanstack/react-query-persist-client": "^5.59.0",
     "expo": "~53.0.0",
+    "expo-asset": "~11.1.7",
     "expo-constants": "~17.0.0",
     "expo-linear-gradient": "~14.0.0",
     "expo-notifications": "~0.31.0",
     "expo-status-bar": "~2.0.0",
     "react": "19.0.0",
+    "react-dom": "^19.0.0",
     "react-native": "0.79.0",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.0",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
+    "react-native-web": "^0.20.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

@@ -6,6 +6,7 @@ dist
 build
 coverage
 *.log
+desktop/renderer
 
 mobile/node_modules
 mobile/.expo

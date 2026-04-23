@@ -18,7 +18,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: "gg.arenax.mobile"
   },
-  plugins: ["expo-notifications"],
+  plugins: ["expo-notifications", "expo-asset"],
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api/v1",
     wsBaseUrl: process.env.EXPO_PUBLIC_WS_BASE_URL ?? "ws://localhost:8080/ws"

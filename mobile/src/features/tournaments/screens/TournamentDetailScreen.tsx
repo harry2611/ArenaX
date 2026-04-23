@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useJoinTournamentMutation, useTournamentDetailQuery } from "@/api/hooks";
+import {
+  useJoinTournamentMutation,
+  useProfileQuery,
+  useTournamentDetailQuery
+} from "@/api/hooks";
 import { GlassCard } from "@/components/GlassCard";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
+import { useResponsive } from "@/hooks/useResponsive";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { LeaderboardEntry, MatchSummary } from "@/types/api";
 import { RootStackParamList } from "@/navigation/types";
@@ -15,8 +20,10 @@ type Props = NativeStackScreenProps<RootStackParamList, "TournamentDetail">;
 export function TournamentDetailScreen({ navigation, route }: Props) {
   const { tournamentId } = route.params;
   const tournamentQuery = useTournamentDetailQuery(tournamentId);
+  const profileQuery = useProfileQuery();
   const joinMutation = useJoinTournamentMutation(tournamentId);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const { isDesktop } = useResponsive();
 
   useEffect(() => {
     if (tournamentQuery.data?.leaderboard) {
@@ -39,70 +46,102 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
 
   const registrationClosed =
     new Date(tournamentQuery.data.registrationClosesAt).getTime() < Date.now();
+  const activeTeam = profileQuery.data?.activeTeam;
+  const hasJoined = activeTeam
+    ? tournamentQuery.data.teams.some((team) => team.id === activeTeam.id)
+    : false;
+  const joinButtonLabel = hasJoined
+    ? "Already joined"
+    : registrationClosed
+      ? "Registration closed"
+      : joinMutation.isPending
+        ? "Joining..."
+        : joinMutation.isSuccess
+          ? "Joined"
+          : "Join Tournament";
 
   return (
     <Screen>
-      <View style={styles.hero}>
-        <Text style={styles.game}>{tournamentQuery.data.gameTitle}</Text>
-        <Text style={styles.title}>{tournamentQuery.data.name}</Text>
-        <Text style={styles.copy}>{tournamentQuery.data.description}</Text>
+      <View style={[styles.overviewGrid, isDesktop ? styles.overviewGridDesktop : null]}>
+        <View style={styles.overviewPrimary}>
+          <View style={styles.hero}>
+            <Text style={styles.game}>{tournamentQuery.data.gameTitle}</Text>
+            <Text style={styles.title}>{tournamentQuery.data.name}</Text>
+            <Text style={styles.copy}>{tournamentQuery.data.description}</Text>
+          </View>
+
+          <Pressable
+            style={[
+              styles.joinButton,
+              registrationClosed || hasJoined ? styles.joinButtonDisabled : null
+            ]}
+            onPress={() => joinMutation.mutate()}
+            disabled={registrationClosed || hasJoined || joinMutation.isPending}
+          >
+            <Text style={styles.joinButtonText}>{joinButtonLabel}</Text>
+          </Pressable>
+          {hasJoined && activeTeam ? (
+            <Text style={styles.success}>
+              {activeTeam.name} is already registered for this tournament.
+            </Text>
+          ) : null}
+          {joinMutation.isSuccess && !hasJoined ? (
+            <Text style={styles.success}>
+              Your team was added to the bracket. The leaderboard will refresh automatically.
+            </Text>
+          ) : null}
+          {joinMutation.error ? (
+            <Text style={styles.error}>{joinMutation.error.message}</Text>
+          ) : null}
+
+          <SectionHeader title="Rules" subtitle="Tournament-ready policies and reporting flow." />
+          <GlassCard>
+            {tournamentQuery.data.rules.map((rule) => (
+              <Text key={rule} style={styles.rule}>
+                - {rule}
+              </Text>
+            ))}
+          </GlassCard>
+        </View>
+
+        <View style={styles.overviewSecondary}>
+          <SectionHeader
+            title="Live Leaderboard"
+            subtitle="Updated through WebSocket broadcasts from the Spring Boot backend."
+          />
+          {leaderboard.map((entry) => (
+            <GlassCard key={entry.id} style={styles.rowCard}>
+              <View>
+                <Text style={styles.rowTitle}>{entry.teamName}</Text>
+                <Text style={styles.rowSubtitle}>
+                  {entry.wins}W / {entry.losses}L - streak {entry.streak}
+                </Text>
+              </View>
+              <Text style={styles.points}>{entry.points} pts</Text>
+            </GlassCard>
+          ))}
+        </View>
       </View>
 
-      <Pressable
-        style={[styles.joinButton, registrationClosed ? styles.joinButtonDisabled : null]}
-        onPress={() => joinMutation.mutate()}
-        disabled={registrationClosed || joinMutation.isPending}
-      >
-        <Text style={styles.joinButtonText}>
-          {registrationClosed
-            ? "Registration closed"
-            : joinMutation.isPending
-              ? "Joining..."
-              : "Join Tournament"}
-        </Text>
-      </Pressable>
-      {joinMutation.error ? (
-        <Text style={styles.error}>{joinMutation.error.message}</Text>
-      ) : null}
-
-      <SectionHeader title="Rules" subtitle="Tournament-ready policies and reporting flow." />
-      <GlassCard>
-        {tournamentQuery.data.rules.map((rule) => (
-          <Text key={rule} style={styles.rule}>
-            - {rule}
-          </Text>
-        ))}
-      </GlassCard>
-
-      <SectionHeader
-        title="Live Leaderboard"
-        subtitle="Updated through WebSocket broadcasts from the Spring Boot backend."
-      />
-      {leaderboard.map((entry) => (
-        <GlassCard key={entry.id} style={styles.rowCard}>
-          <View>
-            <Text style={styles.rowTitle}>{entry.teamName}</Text>
-            <Text style={styles.rowSubtitle}>
-              {entry.wins}W / {entry.losses}L - streak {entry.streak}
-            </Text>
-          </View>
-          <Text style={styles.points}>{entry.points} pts</Text>
-        </GlassCard>
-      ))}
-
       <SectionHeader title="Bracket View" subtitle="Matchups ready for team chat and result reporting." />
-      {tournamentQuery.data.matches.map((match) => (
-        <MatchCard
-          key={match.id}
-          match={match}
-          onPress={() =>
-            navigation.navigate("MatchChat", {
-              matchId: match.id,
-              matchLabel: match.roundLabel
-            })
-          }
-        />
-      ))}
+      <View style={[styles.matchesList, isDesktop ? styles.matchesListDesktop : null]}>
+        {tournamentQuery.data.matches.map((match) => (
+          <View
+            key={match.id}
+            style={[styles.matchCell, isDesktop ? styles.matchCellDesktop : null]}
+          >
+            <MatchCard
+              match={match}
+              onPress={() =>
+                navigation.navigate("MatchChat", {
+                  matchId: match.id,
+                  matchLabel: match.roundLabel
+                })
+              }
+            />
+          </View>
+        ))}
+      </View>
     </Screen>
   );
 }
@@ -129,6 +168,21 @@ function MatchCard({ match, onPress }: MatchCardProps) {
 }
 
 const styles = StyleSheet.create({
+  overviewGrid: {
+    gap: 16
+  },
+  overviewGridDesktop: {
+    flexDirection: "row",
+    alignItems: "flex-start"
+  },
+  overviewPrimary: {
+    flex: 1.4,
+    gap: 16
+  },
+  overviewSecondary: {
+    flex: 1,
+    gap: 12
+  },
   hero: {
     gap: 8
   },
@@ -163,10 +217,27 @@ const styles = StyleSheet.create({
   error: {
     color: arenaTheme.colors.danger
   },
+  success: {
+    color: arenaTheme.colors.accentBlue,
+    lineHeight: 21
+  },
   rule: {
     color: arenaTheme.colors.textSecondary,
     lineHeight: 22,
     marginBottom: 8
+  },
+  matchesList: {
+    gap: 12
+  },
+  matchesListDesktop: {
+    flexDirection: "row",
+    flexWrap: "wrap"
+  },
+  matchCell: {
+    width: "100%"
+  },
+  matchCellDesktop: {
+    width: "48.8%"
   },
   rowCard: {
     flexDirection: "row",

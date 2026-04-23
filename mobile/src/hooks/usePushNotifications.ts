@@ -1,24 +1,16 @@
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
 import { useRegisterDeviceMutation } from "@/api/hooks";
 import { useAuthStore } from "@/store/useAuthStore";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true
-  })
-});
+const supportsNativePush = Platform.OS === "ios" || Platform.OS === "android";
 
 export function usePushNotifications() {
   const token = useAuthStore((state) => state.token);
   const registerDevice = useRegisterDeviceMutation();
-  const [status, setStatus] = useState<"idle" | "enabled" | "blocked" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<
+    "idle" | "enabled" | "blocked" | "unsupported" | "error"
+  >("idle");
 
   useEffect(() => {
     if (!token) {
@@ -26,9 +18,25 @@ export function usePushNotifications() {
       return;
     }
 
+    if (!supportsNativePush) {
+      setStatus("unsupported");
+      return;
+    }
+
     let mounted = true;
 
     const register = async () => {
+      const Notifications = await import("expo-notifications");
+
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true
+        })
+      });
+
       const permissionState = await Notifications.getPermissionsAsync();
       let finalStatus = permissionState.status;
 
@@ -68,4 +76,3 @@ export function usePushNotifications() {
 
   return status;
 }
-

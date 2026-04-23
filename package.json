@@ -1,0 +1,22 @@
+{
+  "name": "arenax",
+  "version": "1.1.0",
+  "private": true,
+  "main": "desktop/main.js",
+  "scripts": {
+    "typecheck": "npm --prefix mobile run typecheck",
+    "dev:backend": "docker compose up --build postgres backend",
+    "dev:mobile": "npm --prefix mobile run start",
+    "dev:web": "npm --prefix mobile run web",
+    "dev:desktop:web": "npm --prefix mobile run web:desktop",
+    "dev:desktop": "concurrently -k -n WEB,DESKTOP -c cyan,green \"npm run dev:desktop:web\" \"wait-on http://127.0.0.1:19006 && electron desktop/main.js\"",
+    "dev:full:web": "concurrently -k -n API,WEB -c magenta,cyan \"npm run dev:backend\" \"npm run dev:web\"",
+    "dev:full:desktop": "concurrently -k -n API,WEB,DESKTOP -c magenta,cyan,green \"npm run dev:backend\" \"npm run dev:desktop:web\" \"wait-on http://127.0.0.1:19006 && electron desktop/main.js\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "^36.2.1",
+    "wait-on": "^8.0.3"
+  }
+}
+

@@ -97,6 +97,8 @@ export function useJoinTournamentMutation(tournamentId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournaments"] });
       queryClient.invalidateQueries({ queryKey: ["tournament", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
   });
 }
@@ -143,4 +145,3 @@ export function useRegisterDeviceMutation() {
       apiClient.post("/notifications/devices", payload)
   });
 }
-

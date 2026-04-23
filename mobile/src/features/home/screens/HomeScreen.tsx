@@ -7,6 +7,7 @@ import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { StatCard } from "@/components/StatCard";
 import { TournamentCard } from "@/components/TournamentCard";
+import { useResponsive } from "@/hooks/useResponsive";
 import { MainTabParamList, RootStackParamList } from "@/navigation/types";
 import { arenaTheme } from "@/theme";
 
@@ -17,6 +18,7 @@ export function HomeScreen(_: Props) {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const tournamentsQuery = useTournamentsQuery();
   const profileQuery = useProfileQuery();
+  const { isDesktop, isTablet } = useResponsive();
 
   if (tournamentsQuery.isLoading || profileQuery.isLoading) {
     return (
@@ -28,25 +30,35 @@ export function HomeScreen(_: Props) {
 
   return (
     <Screen>
-      <View style={styles.hero}>
-        <Text style={styles.kicker}>LIVE OPS</Text>
-        <Text style={styles.title}>
-          {profileQuery.data?.displayName}, your squad is one bracket away from a finals run.
-        </Text>
-        <Text style={styles.subtitle}>
-          Jump into active tournaments, track live matches, and manage your team from a single mobile cockpit.
-        </Text>
-      </View>
+      <View style={[styles.heroWrap, isDesktop ? styles.heroWrapDesktop : null]}>
+        <View style={styles.hero}>
+          <Text style={styles.kicker}>LIVE OPS</Text>
+          <Text style={styles.title}>
+            {profileQuery.data?.displayName}, your squad is one bracket away from a finals run.
+          </Text>
+          <Text style={styles.subtitle}>
+            Jump into active tournaments, track live matches, and manage your team from a single mobile cockpit.
+          </Text>
 
-      <View style={styles.statsRow}>
-        <StatCard
-          label="Rank"
-          value={`#${profileQuery.data?.rank ?? "--"}`}
-        />
-        <StatCard
-          label="Friends"
-          value={`${profileQuery.data?.friendsCount ?? 0}`}
-        />
+          <View style={[styles.statsRow, isTablet ? styles.statsRowTablet : null]}>
+            <StatCard
+              label="Rank"
+              value={`#${profileQuery.data?.rank ?? "--"}`}
+            />
+            <StatCard
+              label="Friends"
+              value={`${profileQuery.data?.friendsCount ?? 0}`}
+            />
+          </View>
+        </View>
+
+        <Pressable style={[styles.ctaCard, isDesktop ? styles.ctaCardDesktop : null]}>
+          <Text style={styles.ctaLabel}>Creator tools</Text>
+          <Text style={styles.ctaTitle}>ArenaX now runs on mobile, web, and an Electron desktop shell.</Text>
+          <Text style={styles.ctaCopy}>
+            Use the desktop client for tournament control, leaderboard viewing, and long-form social coordination.
+          </Text>
+        </Pressable>
       </View>
 
       <SectionHeader
@@ -54,25 +66,23 @@ export function HomeScreen(_: Props) {
         subtitle="High-visibility events with live brackets and leaderboard sync."
       />
 
-      {tournamentsQuery.data?.map((tournament) => (
-        <TournamentCard
-          key={tournament.id}
-          tournament={tournament}
-          onPress={() =>
-            navigation.navigate("TournamentDetail", {
-              tournamentId: tournament.id
-            })
-          }
-        />
-      ))}
-
-      <Pressable style={styles.ctaCard}>
-        <Text style={styles.ctaLabel}>Creator tools</Text>
-        <Text style={styles.ctaTitle}>Admin tournament workflows are scaffolded in the backend.</Text>
-        <Text style={styles.ctaCopy}>
-          Extend this into a full admin panel for seeding, moderation, and analytics.
-        </Text>
-      </Pressable>
+      <View style={[styles.tournamentGrid, isDesktop ? styles.tournamentGridDesktop : null]}>
+        {tournamentsQuery.data?.map((tournament) => (
+          <View
+            key={tournament.id}
+            style={[styles.tournamentCell, isDesktop ? styles.tournamentCellDesktop : null]}
+          >
+            <TournamentCard
+              tournament={tournament}
+              onPress={() =>
+                navigation.navigate("TournamentDetail", {
+                  tournamentId: tournament.id
+                })
+              }
+            />
+          </View>
+        ))}
+      </View>
     </Screen>
   );
 }
@@ -82,8 +92,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center"
   },
+  heroWrap: {
+    gap: 16
+  },
+  heroWrapDesktop: {
+    flexDirection: "row",
+    alignItems: "stretch"
+  },
   hero: {
-    gap: 10
+    gap: 10,
+    flex: 2
   },
   kicker: {
     color: arenaTheme.colors.accentWarm,
@@ -105,12 +123,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12
   },
+  statsRowTablet: {
+    flexWrap: "wrap"
+  },
+  tournamentGrid: {
+    gap: 16
+  },
+  tournamentGridDesktop: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "stretch"
+  },
+  tournamentCell: {
+    width: "100%"
+  },
+  tournamentCellDesktop: {
+    width: "48.8%"
+  },
   ctaCard: {
     backgroundColor: "rgba(76, 245, 186, 0.12)",
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
     borderColor: "rgba(76, 245, 186, 0.2)"
+  },
+  ctaCardDesktop: {
+    flex: 1,
+    minHeight: 210
   },
   ctaLabel: {
     color: arenaTheme.colors.accent,
@@ -128,4 +167,3 @@ const styles = StyleSheet.create({
     lineHeight: 21
   }
 });
-
