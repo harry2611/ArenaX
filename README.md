@@ -161,12 +161,7 @@ Seed data creates these sample users:
 - `rookie@arenax.gg` / `password123`
 - `admin@arenax.gg` / `password123`
 
-## Resume-ready bullets
 
-Adjust the metrics to match your real usage before you put these on a resume:
-
-- Developed ArenaX, a cross-platform React Native esports application for iOS, Android, web, and desktop enabling tournaments, team creation, friend invites, and match chat through shared real-time social competition flows.
-- Architected and deployed Spring Boot services with PostgreSQL, WebSockets, Docker, and CI pipelines powering live leaderboards, notifications, and seamless multi-device gameplay updates.
 
 ## Notes
 
